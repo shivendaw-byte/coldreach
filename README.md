@@ -26,15 +26,33 @@ installed — if the window tells you it's missing, get it from
 | **Your LinkedIn connections** | Free | Your own export — see below. |
 | **Local documents** | Free | A folder of PDFs, Word docs, or text files. |
 
-### Getting your LinkedIn connections
+### Your LinkedIn export
 
 LinkedIn → Me → **Settings & Privacy** → **Data privacy** → **Get a copy of your
-data** → tick **Connections** → Request archive. They email you a zip in about
-ten minutes. Unzip it anywhere; the app finds `Connections.csv` on its own.
+data** → **Request archive**. They email you a zip in about ten minutes. Unzip it
+anywhere on your machine; the app finds it by itself.
 
-Most connections don't expose an email in the export — those still import as warm
-contacts so you can message them on LinkedIn instead. **I can't read your
-LinkedIn directly**; this export is the only legitimate way in, and it's yours.
+Press **Import my LinkedIn export** and it does two things:
+
+1. **Fills in "Who you are"** from your real profile, positions, and resume — your
+   school, year, major, and a first-draft background built from what you've
+   actually done. Edit it; it's a draft, not gospel.
+2. **Loads your connections as targets**, with company, job title, and profile URL.
+
+**Expect almost none of them to have an email.** In a real 6,600-connection
+export, 41 did — about 0.6%. That's LinkedIn hiding it, not a bug. So the export
+is a *targeting* list, not an email list.
+
+### Turning connections into emails
+
+Filter to who you actually want (`McKinsey`, `Consultant`, `Google`), then press
+**Look up work emails**. Apollo matches on the LinkedIn profile URL, which is the
+most reliable key it accepts. Roughly **1 credit per person**, and the app shows
+you the names and the exact credit count before spending anything.
+
+This is the pipeline worth knowing: **your connections → filter → Apollo lookup →
+personalized draft.** It beats a cold Apollo search because these people already
+accepted your connection request.
 
 ## Campaigns
 
@@ -71,6 +89,33 @@ someone's work.
 
 Read [DELIVERABILITY.md](DELIVERABILITY.md) once — it's the reasoning behind
 every rule above, with sources.
+
+## Putting it on GitHub
+
+Double-click **Push to GitHub.bat**. It asks for the URL of an empty repo you
+made at [github.com/new](https://github.com/new), then pushes. Git opens a
+browser to sign you in the first time.
+
+**What gets uploaded:** the code, the example config, the docs.
+**What never does:** `data/` (your contacts, drafts, and log), `config.yaml`
+(your details), your LinkedIn export, `credentials.json`, `token.json`, and your
+Apollo key. All of it is in `.gitignore`, and a fresh clone starts from
+`config.example.yaml` with placeholders.
+
+That last part matters beyond your own privacy: `contacts.csv` holds real names,
+employers, and profile URLs of thousands of people who never agreed to be in a
+public repo.
+
+### Why this isn't hosted as a website
+
+Don't put this on a public URL. It signs into *your* Gmail to create drafts, it
+holds *your* Apollo key, and it stores other people's contact details. On a
+public host, anyone who finds the URL gets all three. Running it locally is the
+feature, not a limitation — it's the reason the Gmail scope can stay
+draft-only and the reason your data never leaves the machine.
+
+If you want something about this on your own site, put up a page describing the
+project and link to the GitHub repo. The app itself stays here.
 
 ## If you'd rather type
 
