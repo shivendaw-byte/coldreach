@@ -124,10 +124,15 @@ def meeting_date(days_out: int = 8) -> str:
     return f"{d:%A}, {d:%B} {d.day}"
 
 
-ROLE_HOOKS = [
+# Only usable when the person has a real focus area — "work on associate" is nonsense.
+FOCUS_HOOKS = [
     "I've been following what {org} is doing, and you're the person there whose "
     "work on {focus} lines up with what I'm trying to learn.",
-    "You came up when I was digging into {org}, and your work as a {role_lower} is "
+    "I've been reading about {org} for a while, and the {focus} side of it is where "
+    "I have the most questions.",
+]
+ROLE_HOOKS = [
+    "You came up when I was digging into {org}, and what you do as {role_article} is "
     "close to the problem I've been trying to understand properly.",
     "I've been reading about {org} for a while, and your side of it — the "
     "{role_lower} side — is the part I have the most questions about.",
@@ -180,11 +185,16 @@ def build_slots(contact: dict, me: dict, campaign: dict) -> dict:
     role = contact.get("role", "")
     audience = campaign.get("audience") or contact.get("audience") or "academic"
 
+    # Lowercase the whole role for mid-sentence use, but leave acronyms (VP, PM) alone.
+    role_lower = " ".join(w if len(w) > 1 and w.isupper() else w.lower()
+                          for w in role.split())
     ctx = {"paper": signal, "interest": interest,
            "interest_cap": interest[:1].upper() + interest[1:] if interest else "",
            "org": org or "your team", "role": role,
-           "role_lower": role[:1].lower() + role[1:] if role else "your work",
-           "focus": interest or (role[:1].lower() + role[1:] if role else "that work")}
+           "role_lower": role_lower or "your work",
+           "role_article": (("an " if role_lower[:1].lower() in "aeiou" else "a ") + role_lower)
+                           if role_lower else "your work",
+           "focus": interest}
 
     if signal:
         hook, anchor = _pick(PAPER_HOOKS, seed).format(**ctx), signal
@@ -192,6 +202,8 @@ def build_slots(contact: dict, me: dict, campaign: dict) -> dict:
         hook, anchor = _pick(WARM_HOOKS, seed + "w").format(**ctx), org
     elif interest and audience == "academic":
         hook, anchor = _pick(INTEREST_HOOKS, seed + "i").format(**ctx), interest
+    elif interest and org:
+        hook, anchor = _pick(FOCUS_HOOKS, seed + "x").format(**ctx), interest
     elif role and org:
         hook, anchor = _pick(ROLE_HOOKS, seed + "r").format(**ctx), f"{role} at {org}"
     elif org:
