@@ -1,0 +1,335 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# This file is yours to edit by hand. The app never overwrites it — anything you
+# change in the app is saved to data/settings.json instead, so these comments
+# and any campaign you write here will survive.
+#
+# After editing, close the black window and double-click "Start coldreach.bat".
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── who you are ──────────────────────────────────────────────────────────────
+# Editable in the app under "Who you are". `background` is the single biggest
+# lever on draft quality — make it sound like you, not like a resume.
+me:
+  name: Your Name
+  first: Your
+  email: you@youruniversity.edu
+  year: sophomore
+  institution: Your School
+  major: what you study
+  background: >-
+    Two or three concrete sentences about what you have actually done. Real
+    coursework, real tools, real projects. No adjectives about yourself. This is
+    the single biggest lever on draft quality — the app can fill it in for you
+    from a LinkedIn data export.
+  signature_line: "Your School | you@youruniversity.edu"
+
+# ── volume + safety rails ────────────────────────────────────────────────────
+limits:
+  drafts_per_day: 8          # hard cap. Volume is the loudest bulk-mail signal.
+  similarity_threshold: 0.60 # block a draft >=60% shingle-identical to a prior one
+  followup_days: 9           # one follow-up, same thread, then stop
+  apollo_max_enrich: 10      # never spend more Apollo credits than this per run
+
+scrape:
+  delay_seconds: 2.0         # per host. Do not lower this.
+
+# ── campaigns ────────────────────────────────────────────────────────────────
+# `subject`, `fit`, `ask`, `salutation`, `signoff` each accept a single string OR
+# a list of variants. With a list, each person deterministically gets a different
+# one — that variety is what stops the similarity check from blocking your drafts.
+#
+# audience: academic | work | warm
+#   academic -> "Dear Professor X,", opens on one of their papers
+#   work     -> "Hi <first>,", opens on their role / company / recent work
+#   warm     -> an existing LinkedIn connection, opens on the connection itself
+#
+# Placeholders: {anchor_short} {org} {role} {first_name} {last_name}
+#               {meeting_date} {year} {institution} {major} {background} {name}
+#
+# To add your own campaign, copy any block below and change the words. The app
+# picks up new campaigns the next time you start it.
+campaigns:
+
+  # ── academic ──────────────────────────────────────────────────────────────
+  research_assistant:
+    audience: academic
+    meeting_days_out: 8
+    subject:
+      - "undergrad question: {anchor_short}"
+      - "question on {anchor_short}"
+    fit:
+      - "I'm a {year} at {institution} studying {major}. {background}"
+      - "For context: {year} at {institution}, {major}. {background}"
+      - >-
+        I'm a {year} in {major} at {institution} and I've been building toward
+        this kind of work on my own. {background}
+    ask:
+      - >-
+        If you're taking on undergraduate research help this term, I'd like to be
+        considered, including for the unglamorous parts: cleaning data,
+        replication, literature pulls. Would you have 15 minutes the week of
+        {meeting_date}? No worries at all if you're not taking students.
+      - >-
+        Are you taking undergraduate RAs this term? I'd be glad to start on
+        whatever is least interesting to you and most useful to the project.
+        Could we talk for 15 minutes the week of {meeting_date}? Totally
+        understand if the answer is no.
+      - >-
+        I'd like to work on this with you, at whatever level is actually useful.
+        If there's room for an undergrad on anything you have going, could I
+        take 15 minutes the week of {meeting_date} to talk about it? Please say
+        so if the timing is bad.
+
+  coffee_chat:
+    audience: academic
+    meeting_days_out: 8
+    subject:
+      - "question about {anchor_short}"
+      - "quick question on {anchor_short}"
+    fit:
+      - >-
+        I'm a {year} at {institution} studying {major}, trying to work out which
+        questions in this area are worth spending years on.
+      - >-
+        I'm a {year} in {major} at {institution}, far enough in to know what I
+        find interesting and not far enough to know what's tractable.
+    ask:
+      - >-
+        Would you be open to 15 minutes the week of {meeting_date}? I'd mostly
+        want to hear how you picked this line of work. Completely understand if
+        your calendar doesn't allow it.
+      - >-
+        Could I take 15 minutes the week of {meeting_date}? I'm less interested
+        in advice than in how you decided this was the thing worth doing. No
+        problem at all if you're stretched.
+
+  advice:
+    audience: academic
+    meeting_days_out: 8
+    subject: "one question on {anchor_short}"
+    fit: "I'm a {year} at {institution} studying {major}. {background}"
+    ask: >-
+      I'm not asking for a position, just whether you'd tell me what you'd read
+      or learn first if you were starting on this today. A two-line reply would
+      genuinely help. Thank you either way.
+
+  # ── startups / YC ─────────────────────────────────────────────────────────
+  startup_intro:
+    audience: work
+    meeting_days_out: 7
+    salutation: "Hi {first_name},"
+    signoff: ["Best", "Thanks"]
+    subject:
+      - "{institution} student — question about {org}"
+      - "question about the hard part of {org}"
+    fit:
+      - "I'm a {year} at {institution} studying {major}. {background}"
+      - >-
+        Quick context: {year} at {institution}, {major}, and I spend most of my
+        free time building things rather than reading about them. {background}
+    ask:
+      - >-
+        Would you be up for 15 minutes in the week of {meeting_date}? I want to
+        understand what the actual hard part of the problem is, not the pitch
+        version. Happy to work around whatever time is least disruptive.
+      - >-
+        Could I ask you two or three specific questions, either over email or in
+        15 minutes the week of {meeting_date}? Either works, and no hard
+        feelings if you're heads-down.
+
+  # ── consulting ────────────────────────────────────────────────────────────
+  consulting_chat:
+    audience: work
+    meeting_days_out: 8
+    salutation: "Hi {first_name},"
+    subject:
+      - "{institution} student — 15 min about {org}?"
+      - "question about your work at {org}"
+    fit:
+      - >-
+        I'm a {year} at {institution} studying {major} and starting to look
+        seriously at consulting. {background}
+      - >-
+        I'm a {year} in {major} at {institution}. I'd rather hear what the work
+        is actually like from someone doing it than from a recruiting deck.
+        {background}
+    ask:
+      - >-
+        Would you have 15 minutes the week of {meeting_date}? I'm trying to work
+        out which parts of the job people actually find worth doing. No problem
+        at all if your schedule is full.
+      - >-
+        Could I take 15 minutes the week of {meeting_date}? I'd want to ask what
+        surprised you most in your first year. Completely understand if not.
+
+  # ── product / tech ────────────────────────────────────────────────────────
+  pm_chat:
+    audience: work
+    meeting_days_out: 8
+    salutation: "Hi {first_name},"
+    subject:
+      - "question about {anchor_short} at {org}"
+      - "{institution} student — question on how {org} builds"
+    fit:
+      - >-
+        I'm a {year} at {institution} studying {major}, and I build things on the
+        side rather than only reading about them. {background}
+      - "I'm a {year} in {major} at {institution}. {background}"
+    ask:
+      - >-
+        Would you be open to 15 minutes the week of {meeting_date}? I mostly want
+        to understand how decisions actually get made on your team. No worries if
+        the timing is bad.
+      - >-
+        Could I ask you a couple of specific questions about how that shipped,
+        either by email or in 15 minutes the week of {meeting_date}?
+
+  # ── existing LinkedIn connections ─────────────────────────────────────────
+  linkedin_reconnect:
+    audience: warm
+    meeting_days_out: 7
+    salutation: ["Hi {first_name},", "Hey {first_name},"]
+    signoff: ["Best", "Thanks", "Cheers"]
+    subject:
+      - "long overdue hello"
+      - "we're connected but have never talked"
+      - "quick hello from {institution}"
+    fit:
+      - >-
+        I'm a {year} at {institution} studying {major}, and I'm trying to be
+        deliberate about actually talking to people instead of collecting
+        connections. {background}
+      - >-
+        Quick context in case it's been a while: {year} at {institution},
+        {major}. {background}
+    ask:
+      - >-
+        Would you be up for 15 minutes the week of {meeting_date}? No agenda
+        beyond hearing what you're working on now. Totally fine if not.
+      - >-
+        If you're open to it, I'd love 15 minutes the week of {meeting_date}.
+        And if email is easier than a call, that works just as well.
+
+# ── where to find people ─────────────────────────────────────────────────────
+# kind: directory -> crawl a faculty/team page. Free, no account needed.
+#       apollo    -> Apollo.io search + reveal. Needs an API key; reveal costs credits.
+#       linkedin  -> your own LinkedIn Connections.csv export. Free.
+#
+# Tick sources on and off in the app — that's saved separately, so this file
+# stays as your master list.
+sources:
+  - name: wharton-bepp
+    kind: directory
+    audience: academic
+    org: Wharton
+    team: Business Economics & Public Policy
+    enabled: true
+    directories: ["https://bepp.wharton.upenn.edu/faculty/faculty-list/"]
+
+  - name: wharton-finance
+    kind: directory
+    audience: academic
+    org: Wharton
+    team: Finance
+    enabled: true
+    directories: ["https://fnce.wharton.upenn.edu/faculty/faculty-list/"]
+
+  - name: wharton-oid
+    kind: directory
+    audience: academic
+    org: Wharton
+    team: Operations, Information & Decisions
+    enabled: false
+    directories: ["https://oid.wharton.upenn.edu/faculty/faculty-list/"]
+
+  - name: wharton-marketing
+    kind: directory
+    audience: academic
+    org: Wharton
+    team: Marketing
+    enabled: false
+    directories: ["https://marketing.wharton.upenn.edu/faculty/faculty-list/"]
+
+  - name: wharton-mgmt
+    kind: directory
+    audience: academic
+    org: Wharton
+    team: Management
+    enabled: false
+    directories: ["https://mgmt.wharton.upenn.edu/faculty/faculty-list/"]
+
+  - name: wharton-accounting
+    kind: directory
+    audience: academic
+    org: Wharton
+    team: Accounting
+    enabled: false
+    directories: ["https://accounting.wharton.upenn.edu/faculty/faculty-list/"]
+
+  - name: wharton-stat
+    kind: directory
+    audience: academic
+    org: Wharton
+    team: Statistics & Data Science
+    enabled: false
+    directories: ["https://statistics.wharton.upenn.edu/faculty/faculty-list/"]
+
+  - name: wharton-lgst
+    kind: directory
+    audience: academic
+    org: Wharton
+    team: Legal Studies & Business Ethics
+    enabled: false
+    directories: ["https://lgst.wharton.upenn.edu/faculty/faculty-list/"]
+
+  - name: wharton-hcmg
+    kind: directory
+    audience: academic
+    org: Wharton
+    team: Health Care Management
+    enabled: false
+    directories: ["https://hcmg.wharton.upenn.edu/faculty/faculty-list/"]
+
+  # ── Apollo saved searches ──────────────────────────────────────────────────
+  # Searching is FREE and shows you who's out there. Revealing an email costs
+  # roughly 1 Apollo credit each, and the app asks before spending any.
+  - name: yc-founders
+    kind: apollo
+    audience: work
+    enabled: false
+    query:
+      titles: ["Founder", "Co-Founder", "CEO"]
+      seniorities: ["founder", "owner", "c_suite"]
+      keywords: "Y Combinator"
+      per_page: 25
+
+  - name: consulting-analysts
+    kind: apollo
+    audience: work
+    enabled: false
+    query:
+      titles: ["Associate", "Business Analyst", "Consultant", "Engagement Manager"]
+      companies: ["mckinsey.com", "bain.com", "bcg.com"]
+      locations: ["United States"]
+      per_page: 25
+
+  - name: pm-tech
+    kind: apollo
+    audience: work
+    enabled: false
+    query:
+      titles: ["Product Manager", "Senior Product Manager", "Group Product Manager"]
+      companies: ["stripe.com", "ramp.com", "figma.com", "anthropic.com"]
+      per_page: 25
+
+  # ── your own LinkedIn connections ─────────────────────────────────────────
+  # Export it: LinkedIn -> Me -> Settings & Privacy -> Data privacy ->
+  # Get a copy of your data -> tick "Connections" -> Request archive.
+  # They email you a zip in ~10 min. Unzip it; leave `path` blank and the app
+  # will find Connections.csv in Downloads, Desktop, or Documents by itself.
+  - name: my-linkedin
+    kind: linkedin
+    audience: warm
+    enabled: false
+    path: ""
+    only_with_email: true

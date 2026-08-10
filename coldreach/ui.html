@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>coldreach</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#fff; --ink:#14161a; --muted:#666e7a; --line:#e2e5ea;
+  --accent:#2f6df6; --good:#1a7f4b; --warn:#9a6400; --bad:#b3261e; --soft:#eef2fb;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#101318;--card:#171b22;--ink:#e9ecf1;--muted:#98a1ad;--line:#262c36;
+        --accent:#6f9bff;--good:#4ec98a;--warn:#e0b050;--bad:#ff8a80;--soft:#1c2430;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:24px 18px 80px}
+h1{font-size:26px;margin:0 0 2px}
+h2{font-size:18px;margin:0 0 4px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:20px;margin-bottom:16px}
+.step{display:flex;gap:12px;align-items:baseline;margin-bottom:14px}
+.num{background:var(--accent);color:#fff;width:26px;height:26px;border-radius:50%;
+  display:grid;place-items:center;font-size:14px;font-weight:600;flex:none}
+button{font:inherit;font-weight:600;border-radius:10px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);padding:11px 18px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.danger{color:var(--bad);border-color:var(--line)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px;font-weight:600}
+input,textarea,select{width:100%;font:inherit;padding:10px 12px;border-radius:10px;
+  border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+textarea{min-height:96px;resize:vertical}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.stat{background:var(--soft);border-radius:10px;padding:12px 14px}
+.stat b{display:block;font-size:24px}
+.stat span{color:var(--muted);font-size:13px}
+.src{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border:1px solid var(--line);
+  border-radius:10px;background:var(--bg);cursor:pointer}
+.src input{width:auto;margin-top:3px;flex:none}
+.src small{color:var(--muted);display:block}
+.tag{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);
+  border:1px solid var(--line);border-radius:20px;padding:1px 8px;margin-left:6px}
+pre.log{background:#0c0f14;color:#cfe0ff;border-radius:10px;padding:14px;font-size:12.5px;
+  max-height:240px;overflow:auto;white-space:pre-wrap;margin:12px 0 0}
+.draft{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;
+  background:var(--bg)}
+.draft h3{margin:0;font-size:15px}
+.draft .subj{color:var(--muted);font-size:13.5px;margin:2px 0 10px}
+.draft pre{white-space:pre-wrap;font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  margin:0 0 10px}
+.issue{font-size:13px;color:var(--warn);margin:2px 0}
+.hidden{display:none}
+.note{background:var(--soft);border-left:3px solid var(--accent);padding:11px 14px;
+  border-radius:0 8px 8px 0;font-size:14px;margin:12px 0}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:20px;z-index:9}
+.modal .card{max-width:520px;margin:0}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>coldreach</h1>
+  <p class="sub">Find people, write a real email to each one, put it in your Gmail drafts. Nothing sends by itself.</p>
+
+  <div class="grid" id="stats"></div>
+
+  <div class="card">
+    <div class="step"><div class="num">1</div><div><h2>Who you are</h2>
+      <div class="sub" style="margin:0">This goes into every email. Worth 5 minutes.</div></div></div>
+    <div id="profile"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="primary" onclick="saveProfile()">Save</button>
+      <span id="profileSaved" class="sub" style="margin:0"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="step"><div class="num">2</div><div><h2>Find people</h2>
+      <div class="sub" style="margin:0">Tick what you want, press the button. Free unless marked Apollo.</div></div></div>
+    <div class="grid" id="sources"></div>
+    <label>Or paste any faculty / team page URL</label>
+    <input id="url" placeholder="https://…/faculty/faculty-list/">
+    <div class="row" style="margin-top:12px">
+      <div style="flex:1;min-width:130px"><label style="margin-top:0">How many</label>
+        <input id="findLimit" type="number" value="20" min="1" max="200"></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="primary" id="findBtn" onclick="doFind()">Find people</button>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--line);margin:22px 0 16px">
+    <h2 style="font-size:16px">Your LinkedIn export</h2>
+    <p class="sub" style="margin:2px 0 10px">Fills in step 1 from your real profile and
+      loads your connections as targets. <b id="lkFound"></b></p>
+    <div class="row">
+      <button onclick="doImportLinkedIn()">Import my LinkedIn export</button>
+    </div>
+
+    <div id="enrichBox" class="hidden" style="margin-top:18px">
+      <div class="note">LinkedIn hides almost everyone's email — about
+        <b id="pendingCount">0</b> of your connections have no address yet.
+        Apollo can look up their work email from their LinkedIn profile, which is the
+        most reliable match there is. <b>Costs roughly 1 credit each.</b></div>
+      <div class="row">
+        <div style="flex:2;min-width:150px"><label style="margin-top:0">Only this company</label>
+          <input id="enCompany" placeholder="McKinsey, Bain, Google…"></div>
+        <div style="flex:2;min-width:150px"><label style="margin-top:0">Only this job title</label>
+          <input id="enTitle" placeholder="Consultant, Analyst…"></div>
+        <div style="flex:1;min-width:100px"><label style="margin-top:0">How many</label>
+          <input id="enLimit" type="number" value="10" min="1" max="100"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button onclick="doEnrich()">Look up work emails</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="step"><div class="num">3</div><div><h2>Write the drafts</h2>
+      <div class="sub" style="margin:0">Each one is checked before it's allowed through.</div></div></div>
+    <div class="row">
+      <div style="flex:2;min-width:200px"><label style="margin-top:0">Campaign</label>
+        <select id="campaign"></select></div>
+      <div style="flex:1;min-width:110px"><label style="margin-top:0">How many</label>
+        <input id="composeLimit" type="number" value="5" min="1" max="8"></div>
+    </div>
+    <label>Only people matching (optional)</label>
+    <input id="filter" placeholder="Wharton, Stripe, Product Manager…">
+    <div class="row" style="margin-top:14px">
+      <button class="primary" onclick="doCompose()">Write drafts</button>
+      <label style="display:flex;align-items:center;gap:7px;margin:0;color:var(--ink);font-weight:500">
+        <input type="checkbox" id="llm" checked style="width:auto"> Use Claude to personalise</label>
+    </div>
+  </div>
+
+  <div class="card" id="reviewCard">
+    <div class="step"><div class="num">4</div><div><h2>Review, then send to Gmail</h2>
+      <div class="sub" style="margin:0">Read every one. They land in Drafts — you press send.</div></div></div>
+    <div id="drafts"></div>
+    <div class="row" style="margin-top:8px">
+      <button class="primary" id="pushBtn" onclick="doPush()">Put these in my Gmail drafts</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="followCard">
+    <h2>Follow-ups due</h2>
+    <p class="sub">Reply in the same thread, 2–3 lines, once only.</p>
+    <div id="follow"></div>
+  </div>
+
+  <div class="card hidden" id="logCard">
+    <h2 id="logTitle">Working…</h2>
+    <pre class="log" id="log"></pre>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal"><div class="card" id="modalBody"></div></div>
+
+<script>
+let S = {}, polling = false;
+
+async function api(path, body){
+  const r = await fetch(path, body ? {method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)} : {});
+  return r.json();
+}
+const esc = s => (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function refresh(){
+  S = await api('/api/state');
+  render();
+  const job = S.job || {};
+  document.getElementById('logCard').classList.toggle('hidden', !job.lines?.length);
+  document.getElementById('logTitle').textContent = job.running ? (job.label + '…') : 'Last run';
+  document.getElementById('log').textContent = (job.lines||[]).join('\n');
+  document.getElementById('log').scrollTop = 1e6;
+  document.querySelectorAll('button').forEach(b => { if(!b.dataset.always) b.disabled = !!job.running; });
+  if(job.result && job.result.needs === 'confirm_credits') showCredits(job.result);
+  if(job.result && job.result.needs === 'apollo_key') askApolloKey();
+  if(job.running && !polling){ polling = true; setTimeout(tick, 1200); }
+}
+async function tick(){ await refresh(); if(S.job && S.job.running) setTimeout(tick,1200); else polling=false; }
+
+function render(){
+  const c = S.counts || {};
+  document.getElementById('stats').innerHTML = [
+    ['People found', c.contacts], ['With an email', c.with_email],
+    ['Not yet contacted', c.untouched], ['Drafts waiting', c.queued]
+  ].map(([k,v])=>`<div class="stat"><b>${v??0}</b><span>${k}</span></div>`).join('');
+
+  if(!document.getElementById('me_name')){
+    const f = [['name','Your name'],['email','Your email address'],['year','Year'],
+      ['institution','School'],['major','What you study'],
+      ['background','Your background — the part that makes you worth replying to'],
+      ['signature_line','Signature line']];
+    document.getElementById('profile').innerHTML = f.map(([k,l]) =>
+      `<label>${l}</label>${k==='background'
+        ? `<textarea id="me_${k}"></textarea>` : `<input id="me_${k}">`}`).join('');
+    for(const [k] of f) document.getElementById('me_'+k).value = (S.me||{})[k] || '';
+  }
+
+  document.getElementById('sources').innerHTML = (S.sources||[]).map(s => `
+    <label class="src"><input type="checkbox" value="${esc(s.name)}" ${s.enabled?'checked':''}
+      onchange="toggleSource(this)">
+      <span><b>${esc(s.name)}</b>${s.kind!=='directory'?`<span class="tag">${esc(s.kind)}</span>`:''}
+      <small>${s.kind==='apollo'?'Apollo — costs credits to reveal emails'
+        : s.kind==='linkedin'?(S.linkedin_export?'Your export was found':'Needs your Connections.csv')
+        : 'Free web directory'}</small></span></label>`).join('');
+
+  document.getElementById('lkFound').textContent = S.linkedin_folder
+    ? 'Found: ' + S.linkedin_folder : 'No export folder found yet.';
+  const pending = S.pending_enrichment || 0;
+  document.getElementById('enrichBox').classList.toggle('hidden', pending === 0);
+  document.getElementById('pendingCount').textContent = pending;
+
+  const sel = document.getElementById('campaign');
+  if(sel.options.length !== (S.campaigns||[]).length)
+    sel.innerHTML = (S.campaigns||[]).map(x =>
+      `<option value="${esc(x.name)}">${esc(x.name.replace(/_/g,' '))} — ${esc(x.audience)}</option>`).join('');
+
+  const q = S.queued || [];
+  document.getElementById('drafts').innerHTML = q.length ? q.map(d => `
+    <div class="draft">
+      <h3>${esc(d.name)} ${d.org?`<span class="tag">${esc(d.org)}</span>`:''}</h3>
+      <div class="subj">${esc(d.email)} &nbsp;·&nbsp; <b>${esc(d.subject)}</b></div>
+      <pre>${esc(d.body)}</pre>
+      ${(d.issues||[]).map(i=>`<div class="issue">⚠ ${esc(i)}</div>`).join('')}
+      <button class="danger" onclick="discard('${esc(d.email)}')">Discard this one</button>
+    </div>`).join('')
+    : '<p class="sub">No drafts waiting. Do step 3.</p>';
+  document.getElementById('pushBtn').classList.toggle('hidden', !q.length);
+
+  const fu = S.followups || [];
+  document.getElementById('followCard').classList.toggle('hidden', !fu.length);
+  document.getElementById('follow').innerHTML = fu.map(r =>
+    `<div class="issue" style="color:var(--ink)">${esc(r.name)} &lt;${esc(r.email)}&gt; — drafted ${esc((r.drafted_at||'').slice(0,10))}</div>`).join('');
+}
+
+async function saveProfile(){
+  const keys = ['name','email','year','institution','major','background','signature_line'];
+  const body = {}; keys.forEach(k => body[k] = document.getElementById('me_'+k).value);
+  body.first = (body.name||'').split(' ')[0];
+  await api('/api/profile', body);
+  document.getElementById('profileSaved').textContent = 'Saved.';
+  setTimeout(()=>document.getElementById('profileSaved').textContent='', 2500);
+}
+async function toggleSource(el){ await api('/api/source_toggle',{name:el.value,enabled:el.checked}); }
+async function discard(email){ await api('/api/discard',{email}); refresh(); }
+
+async function doFind(){
+  const sources = [...document.querySelectorAll('#sources input:checked')].map(i=>i.value);
+  const url = document.getElementById('url').value.trim();
+  if(!sources.length && !url){ alert('Tick at least one source, or paste a URL.'); return; }
+  await api('/api/find', {sources, url, limit:+document.getElementById('findLimit').value});
+  refresh();
+}
+async function doImportLinkedIn(){
+  if(!confirm('Read your LinkedIn export?\n\nThis fills in step 1 from your profile and loads your connections.\nEverything stays on this computer.')) return;
+  await api('/api/import_linkedin', {apply_profile:true});
+  document.getElementById('profile').innerHTML = '';   // force a re-render from new data
+  refresh();
+}
+async function doEnrich(){
+  await api('/api/enrich', {company:document.getElementById('enCompany').value.trim(),
+    title:document.getElementById('enTitle').value.trim(),
+    limit:+document.getElementById('enLimit').value});
+  refresh();
+}
+async function doCompose(){
+  await api('/api/compose', {campaign:document.getElementById('campaign').value,
+    limit:+document.getElementById('composeLimit').value,
+    filter:document.getElementById('filter').value.trim(),
+    llm:document.getElementById('llm').checked});
+  refresh();
+}
+async function doPush(){
+  if(!confirm('Create '+(S.queued||[]).length+' draft(s) in your Gmail?\n\nThey will NOT be sent. You press send yourself.')) return;
+  await api('/api/push', {});
+  refresh();
+}
+
+function modal(html){ document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modal').classList.remove('hidden'); }
+function closeModal(){ document.getElementById('modal').classList.add('hidden'); }
+
+function showCredits(res){
+  const n = res.cap || 0;
+  const who = (res.candidates||[]).slice(0,6)
+    .map(c => `<li>${esc(c.name||'')}${c.org?' — '+esc(c.org):''}</li>`).join('');
+  modal(`<h2>${res.candidates?.length||0} people found</h2>
+    <p class="sub">Looking up their email costs roughly <b>1 Apollo credit each</b>.
+    This will use about <b>${n} credits</b> from your account.</p>
+    ${who?`<ul class="sub" style="margin:0 0 10px 18px">${who}${
+      (res.candidates||[]).length>6?'<li>…</li>':''}</ul>`:''}
+    <div class="note">Nothing has been charged yet.</div>
+    <div class="row"><button class="primary" data-always="1"
+      onclick="spend(${JSON.stringify(res.mode||'find')},${JSON.stringify(res.source||'')})">
+      Look up ${n} emails</button>
+      <button data-always="1" onclick="closeModal()">Not now</button></div>`);
+}
+async function spend(mode, source){
+  closeModal();
+  if(mode === 'enrich'){
+    await api('/api/enrich', {company:document.getElementById('enCompany').value.trim(),
+      title:document.getElementById('enTitle').value.trim(),
+      limit:+document.getElementById('enLimit').value, spend_credits:true});
+  } else {
+    await api('/api/find', {sources:[source], spend_credits:true,
+      limit:+document.getElementById('findLimit').value});
+  }
+  refresh();
+}
+function askApolloKey(){
+  modal(`<h2>Apollo API key needed</h2>
+    <p class="sub">In Apollo: Settings → Integrations → API → create a key, then paste it here.
+    It's stored only on this computer.</p>
+    <input id="akey" placeholder="paste key">
+    <div class="row" style="margin-top:12px">
+      <button class="primary" data-always="1" onclick="saveKey()">Save key</button>
+      <button data-always="1" onclick="closeModal()">Cancel</button></div>`);
+}
+async function saveKey(){
+  await api('/api/apollo_key', {key:document.getElementById('akey').value.trim()});
+  closeModal(); refresh();
+}
+
+refresh();
+</script>
+</body>
+</html>

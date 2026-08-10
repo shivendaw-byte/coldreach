@@ -1,0 +1,35 @@
+# ── never commit: other people's personal data ───────────────────────────────
+# contacts.csv holds real names, employers, and LinkedIn URLs of thousands of
+# people. Publishing it would be a privacy breach affecting them, not just you.
+data/
+*.csv
+*.jsonl
+Connections.csv
+Linkedin/
+LinkedIn/
+
+# ── never commit: credentials ────────────────────────────────────────────────
+credentials.json
+token.json
+.apollo_key
+*.key
+*.pem
+.env
+.env.*
+
+# ── your own filled-in config (config.example.yaml is the shared one) ─────────
+config.yaml
+
+# ── junk ─────────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+.cache/
+.venv/
+venv/
+launcher.log
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

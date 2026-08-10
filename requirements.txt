@@ -1,0 +1,12 @@
+requests>=2.32
+beautifulsoup4>=4.12
+lxml>=5.2
+PyYAML>=6.0
+
+# optional — install what you need
+# anthropic>=0.116          # --llm personalization
+# pypdf>=4.2                # harvest PDFs
+# python-docx>=1.1          # harvest .docx
+# pyperclip>=1.9            # harvest --clip
+# google-api-python-client>=2.130
+# google-auth-oauthlib>=1.2
