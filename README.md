@@ -106,16 +106,36 @@ That last part matters beyond your own privacy: `contacts.csv` holds real names,
 employers, and profile URLs of thousands of people who never agreed to be in a
 public repo.
 
-### Why this isn't hosted as a website
+## The draft checker (on Vercel)
 
-Don't put this on a public URL. It signs into *your* Gmail to create drafts, it
-holds *your* Apollo key, and it stores other people's contact details. On a
-public host, anyone who finds the URL gets all three. Running it locally is the
-feature, not a limitation — it's the reason the Gmail scope can stay
-draft-only and the reason your data never leaves the machine.
+`site/index.html` is the linter, ported to run entirely in your browser. It's
+deployed at
+**[coldreach-shivendaw-6428s-projects.vercel.app](https://coldreach-shivendaw-6428s-projects.vercel.app)**,
+behind Vercel Authentication — only your Vercel account can open it.
 
-If you want something about this on your own site, put up a page describing the
-project and link to the GitHub repo. The app itself stays here.
+Paste any email, from any device, and it runs the same checks the desktop app
+runs: spam phrases, length, links, tracking markers, subject rules, and
+similarity against drafts you've saved. Saved drafts live in that browser's
+local storage and never touch a server.
+
+Use it for emails you write by hand, on your phone, outside the app.
+
+### Why the app itself isn't hosted
+
+
+
+The desktop app can't run on Vercel, and the reason is mechanical rather than
+philosophical: Vercel is serverless, so the filesystem is read-only apart from a
+scratch directory that's wiped between requests. coldreach continuously reads and
+writes `contacts.csv`, `drafts.jsonl`, `settings.json`, and a Gmail token. Hosted
+there it would lose your contacts on every request.
+
+The privacy side matters too — it holds your Gmail OAuth, your Apollo key, and
+thousands of other people's contact details — but the filesystem is the part that
+makes it a non-starter regardless.
+
+Running locally is the feature. It's why the Gmail scope can stay draft-only and
+why your data never leaves the machine.
 
 ## If you'd rather type
 

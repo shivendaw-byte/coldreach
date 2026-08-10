@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Draft checker — coldreach</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#fff; --ink:#14161a; --muted:#5f6773; --line:#e3e6ec;
+  --accent:#2f6df6; --good:#137a45; --warn:#8a5a00; --bad:#b3261e;
+  --goodbg:#e7f6ee; --warnbg:#fdf3df; --badbg:#fdeceb; --soft:#eef2fb;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0e1116;--card:#161a21;--ink:#e8ebf0;--muted:#98a1ad;--line:#252b35;
+        --accent:#6f9bff;--good:#4ec98a;--warn:#e0b050;--bad:#ff8a80;
+        --goodbg:#12291e;--warnbg:#2b2312;--badbg:#2c1715;--soft:#1a212c;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  -webkit-text-size-adjust:100%}
+.wrap{max-width:820px;margin:0 auto;padding:28px 18px 72px}
+header{margin-bottom:22px}
+h1{font-size:27px;margin:0 0 6px;letter-spacing:-.02em}
+.tag{display:inline-block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:2px 9px;
+  margin-bottom:12px}
+p.lede{color:var(--muted);margin:0;font-size:15px}
+p.lede a{color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:18px;margin-bottom:14px}
+label{display:block;font-size:12px;font-weight:700;letter-spacing:.03em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+input,textarea{width:100%;font:inherit;padding:11px 13px;border-radius:10px;
+  border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+textarea{min-height:230px;resize:vertical;line-height:1.6}
+input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+.meta{display:flex;gap:16px;flex-wrap:wrap;margin-top:9px;font-size:13px;color:var(--muted)}
+.meta b{color:var(--ink);font-variant-numeric:tabular-nums}
+.verdict{display:flex;align-items:center;gap:11px;padding:13px 15px;border-radius:11px;
+  font-weight:650;margin-bottom:13px}
+.verdict.pass{background:var(--goodbg);color:var(--good)}
+.verdict.fail{background:var(--badbg);color:var(--bad)}
+.verdict.warnonly{background:var(--warnbg);color:var(--warn)}
+.dot{width:9px;height:9px;border-radius:50%;background:currentColor;flex:none}
+.issue{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:14.5px}
+.issue:first-of-type{border-top:none}
+.chip{font-size:10.5px;font-weight:800;letter-spacing:.05em;padding:3px 7px;border-radius:5px;
+  height:fit-content;flex:none;margin-top:1px}
+.chip.err{background:var(--badbg);color:var(--bad)}
+.chip.warn{background:var(--warnbg);color:var(--warn)}
+.issue .why{color:var(--muted);font-size:13px;display:block;margin-top:2px}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:13px}
+button{font:inherit;font-weight:650;border-radius:9px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);padding:10px 15px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.ghost{color:var(--muted)}
+.hist{font-size:13.5px;color:var(--muted);margin-top:11px}
+.hist b{color:var(--ink)}
+details{margin-top:16px;font-size:14px;color:var(--muted)}
+summary{cursor:pointer;font-weight:650;color:var(--ink)}
+details ul{padding-left:19px;margin:10px 0 0}
+details li{margin-bottom:5px}
+footer{margin-top:26px;font-size:13px;color:var(--muted);text-align:center}
+footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <span class="tag">coldreach</span>
+  <h1>Draft checker</h1>
+  <p class="lede">The same checks <a href="https://github.com/shivendaw-byte/coldreach">coldreach</a>
+    runs before a draft is allowed through. Paste any email — this one runs entirely in your
+    browser. Nothing is uploaded, stored on a server, or sent anywhere.</p>
+</header>
+
+<div class="card">
+  <label for="subject">Subject</label>
+  <input id="subject" placeholder="undergrad question: labor shocks and wage dispersion" autocomplete="off">
+  <label for="body" style="margin-top:15px">Body</label>
+  <textarea id="body" placeholder="Dear Professor …"></textarea>
+  <div class="meta">
+    <span>Body <b id="wc">0</b> words</span>
+    <span>Subject <b id="sc">0</b> chars</span>
+    <span>Links <b id="lc">0</b></span>
+    <span>Closest previous draft <b id="sim">—</b></span>
+  </div>
+  <div class="row">
+    <button class="primary" onclick="remember()">Save as a previous draft</button>
+    <button class="ghost" onclick="clearHistory()">Clear saved drafts</button>
+  </div>
+  <div class="hist" id="hist"></div>
+</div>
+
+<div class="card" id="results"></div>
+
+<details>
+  <summary>Why these particular rules</summary>
+  <ul>
+    <li><b>Similarity</b> — near-identical bodies sent in a window is the fingerprint of
+      bulk mail. This is the check that stops a mail merge with extra steps.</li>
+    <li><b>Tracking pixels</b> — measurably lower inbox placement on cold mail, and they
+      cut reply rates. Don't install Mailtrack, Streak, or Yesware.</li>
+    <li><b>Unsubscribe footers</b> — required for marketing mail, which is exactly why one
+      on a 1:1 email marks it as bulk. Use a human out instead.</li>
+    <li><b>Attachments</b> — raise spam scores from unknown senders. Offer the CV; attach
+      it once they reply.</li>
+    <li><b>Something specific</b> — the one that matters. An email with nothing in it that
+      is true only of the recipient is the one that gets reported.</li>
+  </ul>
+</details>
+
+<footer>
+  Runs offline. <a href="https://github.com/shivendaw-byte/coldreach">Source on GitHub</a>
+</footer>
+</div>
+
+<script>
+const SPAM = ["act now","limited time","risk free","risk-free","100% free","click here",
+  "guarantee","guaranteed","no obligation","special promotion","dear friend",
+  "opportunity of a lifetime","urgent","congratulations","winner","cash bonus",
+  "make money","unsubscribe","this is not spam","call now","order now"];
+const TRACKERS = ["<img","track.","click.","bit.ly","tinyurl","utm_source","mailtrack",
+  "1x1.gif","open.php","pixel"];
+const URL_RE = /https?:\/\/\S+|www\.\S+/g;
+const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+const KEY = "coldreach.drafts.v1";
+
+const $ = id => document.getElementById(id);
+const hist = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } };
+
+function shingles(text, n = 5){
+  const w = (text.toLowerCase().match(/[a-z0-9']+/g) || []);
+  if (w.length < n) return new Set(w.length ? [w.join(" ")] : []);
+  const s = new Set();
+  for (let i = 0; i <= w.length - n; i++) s.add(w.slice(i, i + n).join(" "));
+  return s;
+}
+function similarity(a, b){
+  const A = shingles(a), B = shingles(b);
+  if (!A.size || !B.size) return 0;
+  let shared = 0;
+  for (const x of A) if (B.has(x)) shared++;
+  return shared / (A.size + B.size - shared);
+}
+
+function lint(subject, body){
+  const out = [], low = body.toLowerCase();
+  const words = body.trim() ? body.trim().split(/\s+/).length : 0;
+  const links = body.match(URL_RE) || [];
+  const err = (m, why) => out.push({lvl:"error", msg:m, why});
+  const warn = (m, why) => out.push({lvl:"warn", msg:m, why});
+
+  if (subject.length > 65) err(`Subject is ${subject.length} characters`,
+    "Long subjects get clipped on mobile and read as marketing. Keep it under 65.");
+  if (subject.includes("!")) err("Exclamation mark in the subject",
+    "One of the oldest spam-filter signals there is.");
+  if (EMOJI.test(subject) || EMOJI.test(body)) err("Emoji present",
+    "Fine between friends. On first contact with a stranger it reads as promotional.");
+  if (/^\s*(re|fwd)\s*:/i.test(subject)) err("Fake Re: or Fwd: prefix",
+    "Pretending to be a reply is the fastest way to get reported.");
+  for (const w of subject.split(/\s+/)){
+    const a = w.replace(/[^A-Za-z]/g, "");
+    if (a.length > 3 && a === a.toUpperCase()){
+      warn(`ALL-CAPS word in the subject: ${w}`, "Reads as shouting to a filter and a human.");
+      break;
+    }
+  }
+
+  if (words && words < 85) warn(`Body is ${words} words`,
+    "Thin. Aim for 110–170 — enough to show you actually read their work.");
+  if (words > 210) err(`Body is ${words} words`,
+    "Too long for a cold email. Aim for 110–170.");
+  if (links.length > 1) err(`${links.length} links`,
+    "First contact should have zero or one. Multiple links look like a campaign.");
+  for (const t of TRACKERS) if (low.includes(t)){
+    err(`Tracking or redirect marker: "${t}"`,
+      "Tracking pixels measurably lower inbox placement and cut reply rates.");
+    break;
+  }
+  for (const t of SPAM) if (low.includes(t)){
+    err(`Spam-filter trigger phrase: "${t}"`,
+      t === "unsubscribe"
+        ? "An unsubscribe line is required for marketing mail — which is exactly why it marks a 1:1 email as bulk."
+        : "Common in bulk mail, so filters weight it.");
+    break;
+  }
+  if (/\battach(ed|ment)\b/.test(low)) err("Mentions an attachment",
+    "Attachments from unknown senders raise spam scores. Offer it; attach on reply.");
+  if (low.includes("i hope this email finds you well")) warn("Opens with the most templated sentence in email",
+    "It tells the reader nothing and signals a template immediately.");
+  if (/<[a-z\/][^>]*>/i.test(body)) err("HTML markup detected",
+    "Send plain text. HTML on a 1:1 email reads as marketing.");
+
+  const prior = hist();
+  let top = 0, topIdx = -1;
+  prior.forEach((p, i) => { const s = similarity(body, p.body); if (s > top){ top = s; topIdx = i; } });
+  if (body.trim() && top >= 0.60) err(`${Math.round(top*100)}% similar to a saved draft`,
+    `Nearly identical to "${prior[topIdx].subject || "untitled"}". Near-duplicate bodies are the fingerprint of bulk mail — rewrite the angle, don't tweak words.`);
+  else if (body.trim() && top >= 0.45) warn(`${Math.round(top*100)}% similar to a saved draft`,
+    "Getting close to the line. Worth a different opening.");
+
+  return {issues: out, words, links: links.length, sim: top};
+}
+
+function render(){
+  const subject = $("subject").value, body = $("body").value;
+  const r = lint(subject, body);
+  $("wc").textContent = r.words;
+  $("sc").textContent = subject.length;
+  $("lc").textContent = r.links;
+  $("sim").textContent = hist().length && body.trim() ? Math.round(r.sim*100) + "%" : "—";
+
+  const errs = r.issues.filter(i => i.lvl === "error");
+  const box = $("results");
+  if (!body.trim() && !subject.trim()){
+    box.innerHTML = `<p style="color:var(--muted);margin:0">Paste a draft above and it'll be checked as you type.</p>`;
+    return;
+  }
+  const head = errs.length
+    ? `<div class="verdict fail"><span class="dot"></span>Blocked — ${errs.length} ${errs.length===1?"problem":"problems"} to fix</div>`
+    : r.issues.length
+      ? `<div class="verdict warnonly"><span class="dot"></span>Sendable, with ${r.issues.length} thing${r.issues.length===1?"":"s"} worth a look</div>`
+      : `<div class="verdict pass"><span class="dot"></span>Clean — every check passed</div>`;
+  box.innerHTML = head + r.issues.map(i =>
+    `<div class="issue"><span class="chip ${i.lvl==="error"?"err":"warn"}">${i.lvl==="error"?"FIX":"NOTE"}</span>
+     <span>${i.msg}<span class="why">${i.why}</span></span></div>`).join("");
+}
+
+function remember(){
+  const body = $("body").value.trim();
+  if (!body) return;
+  const list = hist();
+  list.push({subject: $("subject").value.trim(), body});
+  localStorage.setItem(KEY, JSON.stringify(list.slice(-40)));
+  renderHist(); render();
+}
+function clearHistory(){
+  if (!hist().length || confirm("Forget all saved drafts on this device?")){
+    localStorage.removeItem(KEY); renderHist(); render();
+  }
+}
+function renderHist(){
+  const n = hist().length;
+  $("hist").innerHTML = n
+    ? `<b>${n}</b> saved draft${n===1?"":"s"} on this device, used for the similarity check. They never leave your browser.`
+    : `No saved drafts yet. Save each one you send and this will catch you repeating yourself.`;
+}
+
+$("subject").addEventListener("input", render);
+$("body").addEventListener("input", render);
+renderHist(); render();
+</script>
+</body>
+</html>
