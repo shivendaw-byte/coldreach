@@ -106,6 +106,27 @@ That last part matters beyond your own privacy: `contacts.csv` holds real names,
 employers, and profile URLs of thousands of people who never agreed to be in a
 public repo.
 
+## On the web
+
+Two deployments, both behind Vercel Authentication — only your Vercel account can
+open either one.
+
+**The app — [coldreach-inbox-shivendaw-6428s-projects.vercel.app](https://coldreach-inbox-shivendaw-6428s-projects.vercel.app)**
+(`site/index.html` + `site/app.js`)
+
+Upload a CSV, filter, write drafts, open each one in Gmail. **Your contacts live in
+that browser's IndexedDB** — they are never uploaded, and there is no database.
+That's what makes hosting it safe: Vercel stores nothing about the people on your
+list.
+
+The one server-side piece is `site/api/apollo.js`, a stateless function that
+forwards a single Apollo lookup and returns the email. It stores nothing; your key
+arrives with the request and is gone when the function returns.
+
+Because storage is per-browser, your phone and your laptop hold separate lists.
+The desktop app is still the one with faculty-directory scraping and real Gmail
+drafts.
+
 ## The draft checker (on Vercel)
 
 `site/index.html` is the linter, ported to run entirely in your browser. It's
