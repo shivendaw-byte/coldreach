@@ -16,10 +16,20 @@ from urllib.parse import urlparse
 
 import yaml
 
-from . import apollo, compose, find, linkedin, profile_import, settings, store
+from . import apollo, compose, find, linkedin, network, profile_import, settings, store
 
 ROOT = Path(__file__).resolve().parent.parent
 UI = Path(__file__).resolve().parent / "ui.html"
+NETWORK_UI = Path(__file__).resolve().parent / "network.html"
+_NET = {"at": 0.0, "data": None}
+
+
+def net_people(fresh: bool = False) -> list[dict]:
+    """Rebuilding reads 6k+ contacts and the message export (~1s), so cache briefly."""
+    import time
+    if fresh or not _NET["data"] or time.time() - _NET["at"] > 60:
+        _NET.update(at=time.time(), data=network.build())
+    return _NET["data"]["people"]
 
 JOB = {"running": False, "label": "", "lines": [], "result": None, "error": None}
 LOCK = threading.Lock()
@@ -268,6 +278,35 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, UI.read_bytes(), "text/html; charset=utf-8")
         if path == "/api/state":
             return self._send(200, state())
+        if path == "/network":
+            return self._send(200, NETWORK_UI.read_bytes(), "text/html; charset=utf-8")
+        if path == "/api/network":
+            from urllib.parse import parse_qs
+            qs = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
+            people = net_people()
+            firm = qs.get("firm") or None
+            results = network.search(people, qs["q"]) if qs.get("q") else (
+                [p for p in people if p["firm"] == firm] if firm else [])
+            return self._send(200, {
+                "analytics": network.analytics(people),
+                "picks": [network.public(p) for p in network.picks(people)],
+                "followups": [network.public(p) for p in network.followups(people)[:12]],
+                "referrals": [network.public(p) for p in network.referral_candidates(people, firm)[:20]],
+                "results": [network.public(p) for p in results[:80]],
+                "targets": sorted(network.almanac_targets()),
+                "has_messages": _NET["data"]["has_messages"],
+            })
+        if path == "/api/network/person":
+            from urllib.parse import parse_qs
+            pid_ = parse_qs(urlparse(self.path).query).get("id", [""])[0]
+            p = next((x for x in net_people() if x["id"] == pid_), None)
+            if not p:
+                return self._send(404, {"error": "no such person"})
+            modes = {"new": ["cold"], "messaged": ["nudge"], "replied": ["book"],
+                     "call_scheduled": ["referral", "thanks"], "call_done": ["referral", "thanks"],
+                     "referral_asked": ["thanks"], "referred": ["thanks"]}[p["stage"]]
+            return self._send(200, {"person": network.public(p),
+                                    "drafts": [network.draft_message(p, m) for m in modes]})
         self._send(404, {"error": "not found"})
 
     def do_POST(self):
@@ -290,6 +329,17 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/save_source":
             settings.upsert_source(body)
             return self._send(200, {"ok": True})
+
+        if path == "/api/network/event":
+            ev = network.add_event(body["id"], body["kind"], body.get("text", ""))
+            net_people(fresh=True)
+            return self._send(200, ev)
+        if path == "/api/network/debrief":
+            ev = network.debrief(body["id"], body.get("transcript", ""))
+            net_people(fresh=True)
+            return self._send(200, ev)
+        if path == "/api/network/sync_almanac":
+            return self._send(200, {"message": network.sync_almanac(net_people(fresh=True))})
 
         if path == "/api/discard":
             drafts = store.load_drafts()
