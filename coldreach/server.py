@@ -371,7 +371,8 @@ def free_port(preferred: int = 8765) -> int:
 
 def main() -> None:
     port = free_port()
-    url = f"http://127.0.0.1:{port}/"
+    import os
+    url = f"http://127.0.0.1:{port}/" + os.environ.get("COLDREACH_START", "").lstrip("/")
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     print("=" * 62)
     print("  coldreach is running.")
